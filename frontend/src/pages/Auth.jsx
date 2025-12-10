@@ -8,16 +8,13 @@ const Auth = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [isLogin, setIsLogin] = useState(true)
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-  })
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' })
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const from = location.state?.from?.pathname || '/dashboard'
 
+  // Redirect if already authenticated
   useEffect(() => {
     if (!loading && user) {
       navigate(from, { replace: true })
@@ -25,10 +22,7 @@ const Auth = () => {
   }, [user, loading, navigate, from])
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+    setFormData({ ...formData, [e.target.name]: e.target.value })
     setError(null)
   }
 
@@ -38,19 +32,25 @@ const Auth = () => {
     setSubmitting(true)
 
     try {
+      let result
       if (isLogin) {
-        await login(formData.email, formData.password)
+        result = await login(formData.email, formData.password)
       } else {
         if (!formData.name.trim()) {
-          throw new Error('Name is required')
+          setError('Name is required')
+          return
         }
-       await register(formData.name, formData.email, formData.password)
-
+        result = await register(formData.name, formData.email, formData.password)
       }
-      navigate('/dashboard', { replace: true })
-    } catch (error) {
-      console.error('Auth error:', error)
-      setError(error.message || 'An error occurred. Please try again.')
+
+      if (result.success) {
+        navigate('/dashboard', { replace: true })
+      } else {
+        setError(result.message || 'An error occurred. Please try again.')
+      }
+    } catch (err) {
+      console.error('Auth error:', err)
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -198,5 +198,3 @@ const Auth = () => {
 }
 
 export default Auth
-
-
